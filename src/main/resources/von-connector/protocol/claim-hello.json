@@ -1,0 +1,11 @@
+{
+    "type": "claim-hello",
+    "data": {
+        "schema": {
+            "origin-did": "%s",
+            "name": "%s",
+            "version": "%s"
+        },
+        "issuer-did": "%s"
+    }
+}
