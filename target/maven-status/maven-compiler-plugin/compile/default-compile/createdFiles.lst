@@ -3,9 +3,9 @@ ca\gc\pspc\referencevonactuator\vonconnector\ProtoUtil.class
 ca\gc\pspc\referencevonactuator\vonconnector\SchemaKey.class
 ca\gc\pspc\referencevonactuator\intg\JsonUtil.class
 ca\gc\pspc\referencevonactuator\vonconnector\HttpMethod.class
-ca\gc\pspc\referencevonactuator\App.class
 ca\gc\pspc\referencevonactuator\intg\JsonValidateException.class
 ca\gc\pspc\referencevonactuator\intg\JsonLoadException.class
 ca\gc\pspc\referencevonactuator\vonconnector\Util.class
 ca\gc\pspc\referencevonactuator\vonconnector\Agent.class
 ca\gc\pspc\referencevonactuator\vonconnector\MessageType.class
+ca\gc\pspc\referencevonactuator\ReferenceActuator.class
