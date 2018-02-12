@@ -15,11 +15,7 @@ limitations under the License.
 */
 package ca.gc.pspc.referencevonactuator;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,351 +32,42 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import ca.gc.pspc.referencevonactuator.intg.JsonUtil;
 import ca.gc.pspc.referencevonactuator.intg.JsonValidateException;
 import ca.gc.pspc.referencevonactuator.vonconnector.Agent;
 import ca.gc.pspc.referencevonactuator.vonconnector.Config;
-import ca.gc.pspc.referencevonactuator.vonconnector.HttpMethod;
 import ca.gc.pspc.referencevonactuator.vonconnector.MessageType;
 import ca.gc.pspc.referencevonactuator.vonconnector.ProtoUtil;
 import ca.gc.pspc.referencevonactuator.vonconnector.SchemaKey;
 import ca.gc.pspc.referencevonactuator.vonconnector.Util;
 
 public class ReferenceActuator {
-
-    /*
-     * Sample:
-     * {
-          "legal_entity_id" : {
-            "name" : "legal_entity_id",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "corp_num" : {
-            "name" : "corp_num",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "legal_name" : {
-            "name" : "legal_name",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "org_type" : {
-            "name" : "org_type",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "addressee" : {
-            "name" : "addressee",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "address_line_1" : {
-            "name" : "address_line_1",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "address_line_2" : {
-            "name" : "address_line_2",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "city" : {
-            "name" : "city",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "province" : {
-            "name" : "province",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "postal_code" : {
-            "name" : "postal_code",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "country" : {
-            "name" : "country",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "effective_date" : {
-            "name" : "effective_date",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          },
-          "end_date" : {
-            "name" : "end_date",
-            "restrictions" : [ {
-              "schema_key" : {
-                "name" : "incorporation.bc_registries",
-                "version" : "1.0.30",
-                "did" : "27TL9VHhcQNok9QvHLVx1a"
-              }
-            } ]
-          }
-        }
-    
-     * GOOD:
-        {
-            "filters": {
-                "legal_entity_id": "c914cd7d-1f44-44b2-a0d3-c0bea12067fa"
-            },
-            "proof_request": {
-                "name": "incorporation.bc_registries",
-                "version": "1.0.0",
-                "nonce": "1986273812765872",
-                "requested_attrs": {
-                    "address_line_1": {
-                        "name": "address_line_1",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "address_line_2": {
-                        "name": "address_line_2",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "addressee": {
-                        "name": "addressee",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "city": {
-                        "name": "city",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "corp_num": {
-                        "name": "corp_num",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "country": {
-                        "name": "country",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "effective_date": {
-                        "name": "effective_date",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "end_date": {
-                        "name": "end_date",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "legal_entity_id": {
-                        "name": "legal_entity_id",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "legal_name": {
-                        "name": "legal_name",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "org_type": {
-                        "name": "org_type",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "postal_code": {
-                        "name": "postal_code",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    },
-                    "province": {
-                        "name": "province",
-                        "restrictions": [
-                            {
-                                "schema_key": {
-                                    "did": "27TL9VHhcQNok9QvHLVx1a",
-                                    "name": "incorporation.bc_registries",
-                                    "version": "1.0.20"
-                                }
-                            }
-                        ]
-                    }
-                },
-                "requested_predicates": {}
-            }
-        }
-     */
-
+    /* this code is noodling from primordial BC team org book API actuation, parts could be useful still
     private static JsonNode doReqAttrs(SchemaKey sKey, String... attrNames) {
         ObjectNode rv = (ObjectNode)JsonUtil.jsonObject();
-
+    
         Map<String, String> schemaKey = new HashMap<>();
         schemaKey.put("did", sKey.getOriginDid());
         schemaKey.put("name", sKey.getName());
         schemaKey.put("version", sKey.getVersion());
-
+    
         for (String attrName : attrNames) {
             Map<String, JsonNode> reqAttr = new HashMap<>();
             reqAttr.put("name", new TextNode(attrName));
-
+    
             List<Map<String, Map<String, String>>> restrictions = new ArrayList<>();
             Map<String, Map<String, String>> restrictionSchemaKey = new HashMap<>();
             restrictionSchemaKey.put("schema_key", schemaKey);
             restrictions.add(restrictionSchemaKey);
             reqAttr.put("restrictions", JsonUtil.toJsonNode(restrictions));
-
+    
             rv.set(attrName, JsonUtil.toJsonNode(reqAttr));
         }
-
+    
         return rv;
     }
-
+    
     public static void __main(String[] args) throws IOException, JsonValidateException {
         // Get schema attr_names from schema of interest
         String legalEntityId = "bf2b560f-4553-4c09-995c-b021d7663c42"; // nothing burgers
@@ -403,12 +90,12 @@ public class ReferenceActuator {
             "effective_date",
             "end_date"
         };
-
+    
         Map<String, String> filters = new HashMap<>();
         filters.put("legal_entity_id", legalEntityId);
         ObjectNode form = (ObjectNode)JsonUtil.jsonObject();
         form.set("filters", JsonUtil.toJsonNode(filters));
-
+    
         JsonNode reqAttrs = doReqAttrs(sKey, schemaAttrs);
         ObjectNode proofRequest = (ObjectNode)JsonUtil.jsonObject();
         proofRequest.set("name", new TextNode("proof-req"));
@@ -417,55 +104,14 @@ public class ReferenceActuator {
         proofRequest.set("requested_attrs", reqAttrs);
         form.set("proof_request", proofRequest);
         System.out.println(JsonUtil.pprint(form));
-
-        /*
-        URL schemataUrl = new URL(
-            "https://github.com/bcgov/permitify/blob/master/site_templates/bc_registries/schemas.json");
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Accept", "application/json");
-        headers.put("X-CSRFToken", "8BTOz0ScuKzsMS7JgL0UXIwHfZsLsynNN4BgMsSPTt848aYpRuRLFWAYODK7uTN9");
-        
-        HttpURLConnection con = HttpMethod.GET.getConn(schemataUrl, headers);
-        int httpRc = con.getResponseCode();
-        if (httpRc != 200) {
-            throw new IOException(String.format("GBC Org Book returned HTTP %d", httpRc));
-        }
-        
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer content = new StringBuffer();
-        while ((inputLine = in.readLine()) != null) {
-            content.append(inputLine + "\r\n");
-        }
-        in.close();
-        System.out.println("\n\n== 0 == HTTP Raw: " + content.toString());
-        ArrayNode schemataNode = (ArrayNode)JsonUtil.getDefaultMapper().readTree(content.toString());
-        System.out.println("\n\n== 1 == JSON Raw: " + JsonUtil.getDefaultMapper().writeValueAsString(schemataNode));
-        // System.out.println("\n\n== 2 == JSON Pretty: " + JsonUtil.pprint(gbcClaimsNode));
-        
-        Iterator<JsonNode> it = schemataNode.elements();
-        JsonNode schemaNode = null;
-        while (it.hasNext()) {
-            schemaNode = it.next();
-            if (schemaNode.get("name").textValue().equals(sKey.getName()) &&
-                schemaNode.get("version").textValue().equals(
-                    sKey.getVersion())) {
-                break;
-            }
-        }
-        if (schemaNode == null) {
-            assert (false);
-        }
-        */
-
     }
-
+    
     public static void xx_main(String[] args) throws IOException, JsonValidateException {
         URL urlGbcOrgBookClaims = new URL("https://django-devex-von-test.pathfinder.gov.bc.ca/api/v1/verifiableclaims");
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/json");
         headers.put("X-CSRFToken", "8BTOz0ScuKzsMS7JgL0UXIwHfZsLsynNN4BgMsSPTt848aYpRuRLFWAYODK7uTN9");
-
+    
         HttpURLConnection con = HttpMethod.GET.getConn(urlGbcOrgBookClaims, headers);
         int httpRc = con.getResponseCode();
         if (httpRc != 200) {
@@ -482,9 +128,9 @@ public class ReferenceActuator {
         ArrayNode gbcClaimsNode = (ArrayNode)JsonUtil.getDefaultMapper().readTree(content.toString());
         System.out.println("\n\n== 1 == JSON Raw: " + JsonUtil.getDefaultMapper().writeValueAsString(gbcClaimsNode));
         // System.out.println("\n\n== 2 == JSON Pretty: " + JsonUtil.pprint(gbcClaimsNode));
-
+    
         Iterator<JsonNode> it = gbcClaimsNode.elements();
-
+    
         String aClaimJson = null;
         while (it.hasNext()) {
             JsonNode claimJsonNode = it.next().get("claimJSON");
@@ -499,19 +145,19 @@ public class ReferenceActuator {
         System.out.println("Salmon claim: " + salmonClaimJson);
         String fixedJson = Util.pydictpp2Json(salmonClaimJson);
         System.out.println(fixedJson);
-
+    
         JsonNode salmonClaimJsonNode = JsonUtil.getDefaultMapper().readTree(fixedJson);
         System.out.println(JsonUtil.pprint(salmonClaimJsonNode));
-
+    
         JsonNode claimWaccamawNode = gbcClaimsNode.get(733);
         String waccamawClaimJson = claimWaccamawNode.get("claimJSON").textValue();
         System.out.println("Waccamaw claim: " + waccamawClaimJson);
         fixedJson = Util.pydictpp2Json(waccamawClaimJson);
         System.out.println(fixedJson);
-
+    
         JsonNode waccamawClaimJsonNode = JsonUtil.getDefaultMapper().readTree(fixedJson);
         System.out.println(JsonUtil.pprint(waccamawClaimJsonNode));
-
+    
         Properties xlateProps = Config.getInstance().getPrefixed("schema.attr2field.");
         JsonNode waccamawClaimNode = waccamawClaimJsonNode.get("claim");
         Iterator<String> wacIt = waccamawClaimNode.fieldNames();
@@ -525,6 +171,7 @@ public class ReferenceActuator {
             }
         }
     }
+    */
 
     public static void main(String[] args) throws IOException, JsonValidateException {
         // 1. Set up data structures
@@ -608,7 +255,7 @@ public class ReferenceActuator {
                     sKey.getVersion(),
                     originDid));
             System.out.println(String.format(
-                "\n\n== 2.%d == claim-req from BC hello %s",
+                "\n\n== 2.%d == claim-req from BC hello: %s",
                 idx++,
                 JsonUtil.pprint(claimReq.get(sKey))));
             assert (claimReq.get(sKey).size() > 0);
@@ -707,7 +354,7 @@ public class ReferenceActuator {
             assert false;
         }
         catch (IOException x) {
-            // Expect 500: indy-sdk proves claims on only one claim def at a time
+            // Expect 400: indy-sdk proves claims on only one claim def at a time
         }
 
         ObjectNode bcDisplayPruned = Util.pruneClaims(
@@ -738,7 +385,7 @@ public class ReferenceActuator {
         assert (bcClaimsPreFiltNode.size() > 0);
 
         System.out.println(String.format(
-            "\n\n== 7 == BC claims filtered a priori %s",
+            "\n\n== 7 == BC claims filtered a priori: %s",
             JsonUtil.pprint(bcClaimsPreFiltNode)));
         Map<String, ?> bcDisplayPrunedPreFilt = Util.claimsFor(bcClaimsAllNode.get("claims"), null);
         System.out.println(String.format(
@@ -768,7 +415,7 @@ public class ReferenceActuator {
             bcProofRespNode.get("proof-req").toString(),
             bcProofRespNode.get("proof").toString());
         System.out.println(String.format(
-            "\n\n== 10 == SRI agent verifies BC proof (by filter) as %s",
+            "\n\n== 10 == SRI agent verifies BC proof (by filter) as: %s",
             JsonUtil.pprint(sriBcVerificationRespNode)));
         assert (sriBcVerificationRespNode.asBoolean());
 
@@ -798,7 +445,7 @@ public class ReferenceActuator {
             assert false;
         }
         catch (IOException x) {
-            // expect 500 here, no such claim; carry on
+            // expect 400 here, no such claim; carry on
         }
 
         // 12. SRI Agent as Verifier verifies proof (by referent)
@@ -808,7 +455,7 @@ public class ReferenceActuator {
             bcProofRespNode.get("proof-req").toString(),
             bcProofRespNode.get("proof").toString());
         System.out.println(String.format(
-            "\n\n== 11 == SRI agent verifies BC proof (by referent=%s) verifies as %s",
+            "\n\n== 11 == SRI agent verifies BC proof (by referent=%s) as: %s",
             JsonUtil.toJsonNode(bcReferents),
             JsonUtil.pprint(sriBcVerificationRespNode)));
         assert (sriBcVerificationRespNode.asBoolean());
@@ -886,11 +533,11 @@ public class ReferenceActuator {
         }
         assert (claimAttrs.contains("id") && claimAttrs.size() == 1);
         System.out.println(String.format(
-            "\n\n== 12 == BC claims structure by predicate: %s",
+            "\n\n== 12 == BC claims structure by predicate id >= 3: %s",
             JsonUtil.pprint(claimsFoundPredNode)));
         Map<String, JsonNode> bcDisplayPred = Util.claimsFor(claimsFoundPredNode.get("claims"), null);
         System.out.println(String.format(
-            "\n\n== 13 == BC display claims by predicate: %s",
+            "\n\n== 13 == BC display claims by predicate id >= 3: %s",
             JsonUtil.pprint(bcDisplayPred)));
         assert (bcDisplayPred.size() == 1);
 
@@ -936,7 +583,7 @@ public class ReferenceActuator {
             bcProofRespPredNode.get("proof-req").toString(),
             bcProofRespPredNode.get("proof").toString());
         System.out.println(String.format(
-            "\n\n== 16 == SRI agent verifies BC proof by predicates id, orgTypeId >= 2 as %s",
+            "\n\n== 16 == SRI agent verifies BC proof by predicates id, orgTypeId >= 2 as: %s",
             JsonUtil.pprint(sriBcVerificationRespNode)));
         assert (sriBcVerificationRespNode.asBoolean());
 
