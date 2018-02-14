@@ -1,8 +1,0 @@
-{
-    "type": "proof-request-by-referent",
-    "data": {
-        "schemata": %s,
-        "referents": %s,
-        "requested-attrs": %s
-    }
-}

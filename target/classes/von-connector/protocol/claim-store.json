@@ -1,6 +1,0 @@
-{
-    "type": "claim-store",
-    "data": {
-        "claim": %s
-    }
-}

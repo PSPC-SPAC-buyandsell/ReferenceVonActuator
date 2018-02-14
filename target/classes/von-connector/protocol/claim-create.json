@@ -1,7 +1,0 @@
-{
-    "type": "claim-create",
-    "data": {
-        "claim-req": %s,
-        "claim-attrs": %s
-    }
-}
