@@ -236,7 +236,8 @@ public class ReferenceActuator {
             assert (emptyRespNode.size() == 0);
         }
 
-        // 5. Issuers send claim-hello to HolderProvers
+        // 5. Issuers create claim-offers for HolderProvers (by proxy via Issuer) to store
+        Map<SchemaKey, JsonNode> claimOffer = new HashMap<>();
         Map<SchemaKey, JsonNode> claimReq = new HashMap<>();
         idx = 0;
         for (SchemaKey sKey : schemaStore.keySet()) {
@@ -245,18 +246,32 @@ public class ReferenceActuator {
                 originDid == Agent.BC_REGISTRAR.getDid()
                     ? "bc-org-book"
                     : "pspc-org-book");
+            claimOffer.put(
+                sKey,
+                did2agent.get(originDid).getPostResponse(
+                    null,
+                    MessageType.CLAIM_OFFER_CREATE,
+                    sKey.getOriginDid(),
+                    sKey.getName(),
+                    sKey.getVersion(),
+                    holderProver.getDid()));
+            assert (claimOffer.get(sKey).size() > 0);
+            System.out.println(String.format(
+                "\n\n== 2.%d.0 == Claim offer %s: %s",
+                idx,
+                sKey.toString(),
+                JsonUtil.pprint(claimOffer.get(sKey))));
+
             claimReq.put(
                 sKey,
                 did2agent.get(originDid).getPostResponse(
                     holderProver,
-                    MessageType.CLAIM_HELLO,
-                    sKey.getOriginDid(),
-                    sKey.getName(),
-                    sKey.getVersion(),
-                    originDid));
+                    MessageType.CLAIM_OFFER_STORE,
+                    claimOffer.get(sKey).toString()));
             System.out.println(String.format(
-                "\n\n== 2.%d == claim-req from BC hello: %s",
+                "\n\n== 2.%d.1 == Claim request %s: %s",
                 idx++,
+                sKey.toString(),
                 JsonUtil.pprint(claimReq.get(sKey))));
             assert (claimReq.get(sKey).size() > 0);
         }

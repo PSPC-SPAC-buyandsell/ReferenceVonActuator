@@ -33,14 +33,15 @@ import ca.gc.pspc.referencevonactuator.intg.JsonUtil;
  * <code>MessageType</code> enum encapsulates operations and attributes particular to message types in scope.
  */
 public enum MessageType {
-    CLAIM_CREATE("claim-create", false),
-    CLAIM_HELLO("claim-hello", true),
-    CLAIM_REQUEST("claim-request", true),
     CLAIMS_RESET("claims-reset", false),
+    CLAIM_OFFER_CREATE("claim-offer-create", true),
+    CLAIM_OFFER_STORE("claim-offer-store", true),
+    CLAIM_CREATE("claim-create", true),
     CLAIM_STORE("claim-store", true),
+    CLAIM_REQUEST("claim-request", true),
     PROOF_REQUEST("proof-request", true),
     PROOF_REQUEST_BY_REFERENT("proof-request-by-referent", true),
-    SCHEMA_LOOKUP("schema-lookup", false),
+    SCHEMA_LOOKUP("schema-lookup", true),
     VERIFICATION_REQUEST("verification-request", true);
 
     private String slug;
@@ -81,7 +82,7 @@ public enum MessageType {
     public JsonNode form(String proxyDid, Object... tplArgs) throws JsonLoadException {
         JsonNode rv = null;
         URL protoTplLoc = Thread.currentThread().getContextClassLoader().getResource(String.format(
-                "von-connector/protocol/%s.json", slug));
+            "von-connector/protocol/%s.json", slug));
 
         try {
             Path p = Paths.get(protoTplLoc.toURI());
@@ -94,7 +95,7 @@ public enum MessageType {
                 }
                 else {
                     System.out.println(String.format(
-                            "WARN: Message type [%s] does not accept proxy-did [%s]", slug, proxyDid));
+                        "WARN: Message type [%s] does not accept proxy-did [%s]", slug, proxyDid));
                 }
             }
             rv = (JsonNode)objNode;
